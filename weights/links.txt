@@ -1,0 +1,2 @@
+https://pjreddie.com/media/files/yolov3-tiny.weights
+https://pjreddie.com/media/files/yolov3.weights
