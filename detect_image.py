@@ -9,6 +9,6 @@ YOLOv3tiny = {  "cfg":"cfg/yolov3-tiny.cfg",
 
 if __name__ == "__main__":
     img = cv2.imread("inputs/people.jpeg")
-    net = model.yolo(YOLOv3tiny["cfg"], YOLOv3tiny["weights"], "coco.names")
+    net = model.yolo(YOLOv3["cfg"], YOLOv3["weights"], "coco.names")
     boxes, confs = net.predict(img)
     utils.draw_outputs(img, boxes, confs)
