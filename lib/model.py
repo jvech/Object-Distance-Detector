@@ -40,4 +40,4 @@ class yolo():
                     h = int(detect[3] * height)
                     boxes.append([x, y, w, h])
                     confs.append(conf)
-        return boxes, confs
+        return np.array(boxes), confs
