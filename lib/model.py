@@ -41,3 +41,25 @@ class yolo():
                     boxes.append([x, y, w, h])
                     confs.append(conf)
         return np.array(boxes), confs
+    
+    def predict_video(self, blob, shape):
+        ch, height, width = shape
+        self.model.setInput(blob)
+        outputs = self.model.forward(self.out_layers)
+        ## get boxes
+        boxes = []
+        confs = []
+        for out in outputs:
+            for i in range(blob.shape[0]):
+                for detect in out[i]:
+                    scores = detect[5:]
+                    class_id = np.argmax(scores)
+                    conf = scores[class_id]
+                    if conf > 0.3 and self.classes[class_id] == "person":
+                        x = int(detect[0] * width)
+                        y = int(detect[1] * height)
+                        w = int(detect[2] * width)
+                        h = int(detect[3] * height)
+                        boxes.append([i, x, y, w, h])
+                        confs.append([i, conf])
+        return np.array(boxes), np.array(confs)
