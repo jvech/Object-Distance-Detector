@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+from . import utils
 
 def load_image(img_path):
     img = cv2.imread(img_path)/255
@@ -17,9 +18,8 @@ class yolo():
 
         self.model.setPreferableBackend(cv2.dnn.DNN_BACKEND_OPENCV)
         self.model.setPreferableTarget(cv2.dnn.DNN_TARGET_OPENCL_FP16)
-    
 
-    def predict(self, img):
+    def predict(self, img, NMS_thresh = 0.25):
         height, width, ch = img.shape
         X = cv2.resize(img, None, fx=0.4, fy=0.4)
         blob = cv2.dnn.blobFromImage(X, scalefactor=1/255, size=(320, 320), mean=(0, 0, 0), swapRB=True, crop=False)
@@ -40,4 +40,5 @@ class yolo():
                     h = int(detect[3] * height)
                     boxes.append([x - w//2, y - h//2, w, h])
                     confs.append(conf)
-        return np.array(boxes), confs
+        return utils.NMS(np.array(boxes), np.array(confs), nms_thresh=NMS_thresh)
+        # return np.array(boxes), np.array(confs)

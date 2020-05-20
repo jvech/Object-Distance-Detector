@@ -8,11 +8,13 @@ YOLOv3tiny = {  "cfg":"cfg/yolov3-tiny.cfg",
                 "weights":"weights/yolov3-tiny.weights"}
 
 if __name__ == "__main__":
-    net = model.yolo(YOLOv3tiny["cfg"], YOLOv3tiny["weights"], "coco.names")
+    net = model.yolo(YOLOv3["cfg"], YOLOv3["weights"], "coco.names")
     video = cv2.VideoCapture("inputs/Cargando_cemento.mp4")
+    ret = True
     while video.isOpened():
         ret, frame = video.read()
         boxes, confs = net.predict(frame)
+        boxes, confs = utils.NMS(boxes, confs, nms_thresh=0.25)
         frame = utils.draw_outputs(frame, boxes, confs, show=False)
         frame = utils.draw_distances(frame, boxes, show=False)
         if ret:
