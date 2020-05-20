@@ -8,11 +8,12 @@ comb = lambda n: factorial(n)//(2*factorial(n-2))
 
 def draw_outputs(img, boxes, confs, show = True):
     Img = img.copy()
-    for i in range(boxes.shape[0]):
-        x, y, w, h = boxes[i,:]
-        Img = cv2.circle(Img, (x,y), 3, (0,0,255), -1)
+    for i, (x, y, w, h) in enumerate(boxes):
+        # x, y, w, h = boxes[i,:]
+        # Img = cv2.circle(Img, (x,y), 3, (0,0,255), -1)
+        Img = cv2.rectangle(Img, (x,y), (x+w,y+h), (0,0,255), 2)
         Img = cv2.putText(Img,"{:1.2f}".format(confs[i]), (x,y), 
-                    cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (0,0,255)) 
+                    cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (0,0,255))
     if show == True:
         while(1):
             cv2.imshow("Foto", Img)
@@ -20,8 +21,11 @@ def draw_outputs(img, boxes, confs, show = True):
                 break
     return Img
 
-def draw_distances(img, boxes, show = True):
+def draw_distances(img, Boxes, show = True):
     try:
+        x, y, w, h = (Boxes.T)[:]
+        x, y = x + w//2, y + h//2
+        boxes = np.array([x,y,w,h]).T
         dist = distance(boxes)
         Img = img.copy()
         for i, X in enumerate(dist):
@@ -54,4 +58,4 @@ def distance(boxes):
         indxs.append(i)
         if len(indxs) == n:
             break
-    return d 
+    return np.array(d) 
