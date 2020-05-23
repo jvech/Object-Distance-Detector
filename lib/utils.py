@@ -6,26 +6,37 @@ from numpy.linalg import norm
 comb = lambda n: factorial(n)//(2*factorial(n-2))
 
 
-def draw_outputs(img, boxes, confs, show = True):
+def draw_outputs(img, boxes, confs, show = True, color = (0,0,255)):
+    """
+    Dibuja las bounding boxes junto con su respectiva fiabilidad
+        img : imagen
+        boxes : np.array([[x1,y1,w1,h1],...,[xn, yn, wn, hn]])
+        confs : np.array([conf1, ..., confn])
+        show  : True -> mostrar imagen con bounding boxes
+                False -> no mostrar nada
+        color -> Bounding Boxes Color (B,G,R)
+    """
     Img = img.copy()
     for i, (x, y, w, h) in enumerate(boxes):
-        # x, y, w, h = boxes[i,:]
-        # Img = cv2.circle(Img, (x,y), 3, (0,0,255), -1)
-        Img = cv2.rectangle(Img, (x,y), (x+w,y+h), (0,0,255), 2)
+        Img = cv2.rectangle(Img, (x,y), (x+w,y+h), color, 2)
         Img = cv2.putText(Img,"{:1.2f}".format(confs[i]), (x,y), 
-                    cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, (0,0,255))
+                    cv2.FONT_HERSHEY_COMPLEX_SMALL, 1, color)
     if show == True:
         cv2.namedWindow('Image', cv2.WINDOW_NORMAL)
         cv2.imshow('Image', Img)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
-        # while(1):
-        #     cv2.imshow("Foto", Img)
-        #     if cv2.waitKey(1) == ord('q'):
-        #         break
     return Img
 
 def draw_distances(img, Boxes, show = True):
+    """
+    Dibuja las distancias calculadas entre bounding boxes
+        img : imagen
+        boxes : np.array([[x1,y1,w1,h1],...,[xn, yn, wn, hn]]) shape = (n,4)
+        confs : np.array([conf1, ..., confn]) shape = n
+        show  : True -> mostrar imagen con bounding boxes
+                False -> no mostrar nada
+    """
     try:
         x, y, w, h = (Boxes.T)[:]
         x, y = x + w//2, y + h//2
@@ -45,8 +56,49 @@ def draw_distances(img, Boxes, show = True):
             cv2.destroyAllWindows()
         return Img
 
+def nearest(in_box, boxes):
+    """
+    me retorna el bounding box mas cercano a in_box
+        in_box : np.array([x,y,w,h]) shape = (1,4)
+        boxes  : np.array([[x,y,w,h]...]) shape = (n,4)
+    """
+    x1 = in_box[0:2]
+    d, inds = [], []
+    for i, x2 in enumerate(boxes[:,0:2]):
+        if IoU(boxes[i][0:4],in_box) > 0.01:
+            d.append(np.linalg.norm(x1-x2))
+            inds.append(i)
+    if len(d) != 0:
+        return boxes[inds[np.argmin(d)]]
+    else:
+        return np.array([0, 0, 0, 0])
+
+def Average_Prec(boxes_det, boxesB, confs):
+    """
+    Calcula el Average Precision
+        boxes_det \t : Bounding boxes detectadas
+        boxesB  \t : Bounding boxes etiquetadas
+        confs \t : nivel de fiabilidad
+    """
+    n = len(boxes_det)
+    Ap = 0
+    indxs = np.argsort(confs)[::-1]
+    boxesA = boxes_det[np.argsort(confs)[::-1]]
+    for i, boxA in enumerate(boxesA):
+        boxB = nearest(boxA, boxesB)
+        if IoU(boxA, boxB) > 0.5:
+            Ap += (Ap+1)/(i+1)
+        else:
+            Ap += Ap/(i+1)
+    return Ap/n
+
+
 
 def distance(boxes):
+    """
+    Calcula la distancia entre todos los bounding boxes
+        boxes\t:np.array([[x,y,w,h],...]) shape = (n,4)
+    """
     if len(boxes) <= 1:
         raise ValueError ("you must have 2 or more boxes")
     n = comb(len(boxes))
@@ -64,6 +116,9 @@ def distance(boxes):
     return np.array(d)
 
 def IoU(BoxA, BoxB):
+    """
+    Intersection over Union
+    """
     assert BoxA.size == 4 & BoxB.size == 4, ("Incorrect Box Shape")
     I_x, I_y = np.max([BoxA[0:2], BoxB[0:2]], axis=0)
     I_w, I_h = np.min([BoxA[0:2] + BoxA[2:4], BoxB[0:2] + BoxB[2:4]], axis=0)
@@ -73,6 +128,12 @@ def IoU(BoxA, BoxB):
     return I_A/U_A
 
 def NMS(boxes,confs, nms_thresh=0.4):
+    """
+    Calculates Non-Maximum Supression
+        boxes \t: np.array([[x,y,w,h],...]) shape = (n,4)
+        confs \t: np.array([conf1,...,]) shape = n
+        nms_thres\t: IoU threshold
+    """
     assert type(boxes) == np.ndarray, ("boxes must be np.ndarray")
     nms_boxes = []
     nms_confs = []
