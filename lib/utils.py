@@ -2,13 +2,14 @@ import cv2
 import numpy as np
 from math import factorial
 from numpy.linalg import norm
+import csv
 
 comb = lambda n: factorial(n)//(2*factorial(n-2))
 
 
 def draw_outputs(img, boxes, confs, show = True, color = (0,0,255)):
     """
-    Dibuja las bounding boxes junto con su respectiva fiabilidad
+    Draws the bounding boxes and their confidences
         img : imagen
         boxes : np.array([[x1,y1,w1,h1],...,[xn, yn, wn, hn]])
         confs : np.array([conf1, ..., confn])
@@ -30,7 +31,7 @@ def draw_outputs(img, boxes, confs, show = True, color = (0,0,255)):
 
 def draw_distances(img, Boxes, show = True):
     """
-    Dibuja las distancias calculadas entre bounding boxes
+    Draws the Calculated bounding boxes distances
         img : imagen
         boxes : np.array([[x1,y1,w1,h1],...,[xn, yn, wn, hn]]) shape = (n,4)
         confs : np.array([conf1, ..., confn]) shape = n
@@ -58,7 +59,7 @@ def draw_distances(img, Boxes, show = True):
 
 def nearest(in_box, boxes):
     """
-    me retorna el bounding box mas cercano a in_box
+    Returns the nearest box to in_box
         in_box : np.array([x,y,w,h]) shape = (1,4)
         boxes  : np.array([[x,y,w,h]...]) shape = (n,4)
     """
@@ -75,7 +76,7 @@ def nearest(in_box, boxes):
 
 def Average_Prec(boxes_det, boxesB, confs):
     """
-    Calcula el Average Precision
+    Returns the Average Precision
         boxes_det \t : Bounding boxes detectadas
         boxesB  \t : Bounding boxes etiquetadas
         confs \t : nivel de fiabilidad
@@ -96,7 +97,7 @@ def Average_Prec(boxes_det, boxesB, confs):
 
 def distance(boxes):
     """
-    Calcula la distancia entre todos los bounding boxes
+    Retruns the distance between all bounding boxes
         boxes\t:np.array([[x,y,w,h],...]) shape = (n,4)
     """
     if len(boxes) <= 1:
@@ -150,4 +151,38 @@ def NMS(boxes,confs, nms_thresh=0.4):
                 cconfs.pop(j)
     return np.array(nms_boxes), np.array(nms_confs)
 
+def save_outputs(name, boxes, confs, frame, ids=-1, real_time=False):
+    """
+    Saves the detection in a csv file
 
+    Input:
+        name  -> file name
+        boxes -> np.array([[x1,y1,w1,h1], ...])
+        confs -> np.array([conf1, ... ])
+        frame -> number of the frame
+        ids   -> for trackers is np.array([id1, ...])
+                 else ids = -1
+    Save Format:
+        [[frame, id, x, y, w, h, conf], ...]
+    """
+    header = ["frame", "ids", "x", "y", "w", "h", "confs"]
+    bkeys  = ("x", "y", "w", "h")
+    try:
+        save = np.zeros((len(confs), len(header)))
+        save[:,0] = np.array(len(confs)*[frame])
+        save[:,1] = np.array(ids)
+        save[:,2:6] = boxes
+        save[:,-1] = confs.round(decimals=2)
+    except:
+        return
+    
+    if ids == -1:
+        ids = len(confs)*[-1]
+    
+    file = open(name, "a")
+    writer = csv.writer(file)
+    for i in range(len(save)):
+        writer.writerow(save[i].tolist())
+    
+    file.close()
+    return 

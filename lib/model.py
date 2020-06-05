@@ -41,4 +41,3 @@ class yolo():
                     boxes.append([x - w//2, y - h//2, w, h])
                     confs.append(conf)
         return utils.NMS(np.array(boxes), np.array(confs), nms_thresh=NMS_thresh)
-        # return np.array(boxes), np.array(confs)
